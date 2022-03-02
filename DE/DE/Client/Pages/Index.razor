@@ -1,0 +1,110 @@
+﻿@page "/"
+@inject HttpClient Http
+@using System.Text 
+
+
+    @using DE.Shared
+
+    <PageTitle>Index</PageTitle>
+
+    <h1>Add asset</h1>
+
+
+
+    <EditForm Model="Asset" OnValidSubmit="@HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="row">
+            <div>
+                <label>AssetId</label>
+            </div>
+            <div>
+                <InputText id="AssetId" DisplayName="AssetId" @bind-Value="Asset.AssetId" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>AssetIdCode</label>
+            </div>
+            <div>
+                <InputText id="AssetIdCode" DisplayName="AssetId" @bind-Value="Asset.AssetIdCode" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>AssetNameArabic</label>
+            </div>
+            <div>
+                <InputText id="AssetNameArabic" DisplayName="AssetId" @bind-Value="Asset.AssetNameArabic" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>AssetDateOfService</label>
+            </div>
+            <div>
+                <InputDate id="AssetNameArabic" DisplayName="AssetDateOfService" @bind-Value="Asset.AssetDateOfService" />
+            </div>
+        </div>
+
+
+
+
+        <button type="submit">Submit</button>
+    </EditForm>
+
+    <div class="row">
+        <div>
+            <label>Upload the Picture after the Submit</label>
+        </div>
+        <div>
+            <InputFile OnChange="@UploadPicure" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div>
+            <label>Upload the files after the Submit</label>
+        </div>
+        <div>
+            <InputFile OnChange="@LoadFiles" multiple />
+        </div>
+    </div>
+
+    @code{
+        public AssetDataViewModel Asset { get; set; }
+
+        protected override async Task OnInitializedAsync()
+        {
+            Asset = new AssetDataViewModel();
+        }
+
+        private async Task HandleValidSubmit()
+        {
+
+
+            string json = JsonConvert.SerializeObject(Asset);
+
+
+
+
+            var result = await Http.PostAsJsonAsync("Asset/AddNewAsset", json);
+
+            var s = result.Content;
+
+
+        }
+
+        private void UploadPicure(InputFileChangeEventArgs e)
+        {
+
+        }
+
+        private void LoadFiles(InputFileChangeEventArgs e)
+        {
+
+        }
+    }
