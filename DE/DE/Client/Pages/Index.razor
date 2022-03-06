@@ -1,110 +1,209 @@
 ﻿@page "/"
 @inject HttpClient Http
-@using System.Text 
-
-
-    @using DE.Shared
-
-    <PageTitle>Index</PageTitle>
-
-    <h1>Add asset</h1>
+@using System.Text
+@using System.Net.Http.Headers
+@inject NavigationManager NavigationManager
 
 
 
-    <EditForm Model="Asset" OnValidSubmit="@HandleValidSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-        <div class="row">
-            <div>
-                <label>AssetId</label>
-            </div>
-            <div>
-                <InputText id="AssetId" DisplayName="AssetId" @bind-Value="Asset.AssetId" />
-            </div>
+
+@using DE.Shared
+
+<PageTitle>Index</PageTitle>
+
+<h1>Add asset</h1>
+
+
+
+<EditForm Model="Asset" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="row">
+        <div>
+            <label>AssetId</label>
         </div>
-
-        <div class="row">
-            <div>
-                <label>AssetIdCode</label>
-            </div>
-            <div>
-                <InputText id="AssetIdCode" DisplayName="AssetId" @bind-Value="Asset.AssetIdCode" />
-            </div>
+        <div>
+            <InputText id="AssetId" DisplayName="AssetId" @bind-Value="Asset.AssetId" />
         </div>
-
-        <div class="row">
-            <div>
-                <label>AssetNameArabic</label>
-            </div>
-            <div>
-                <InputText id="AssetNameArabic" DisplayName="AssetId" @bind-Value="Asset.AssetNameArabic" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div>
-                <label>AssetDateOfService</label>
-            </div>
-            <div>
-                <InputDate id="AssetNameArabic" DisplayName="AssetDateOfService" @bind-Value="Asset.AssetDateOfService" />
-            </div>
-        </div>
-
-
-
-
-        <button type="submit">Submit</button>
-    </EditForm>
+    </div>
 
     <div class="row">
         <div>
-            <label>Upload the Picture after the Submit</label>
+            <label>AssetIdCode</label>
         </div>
+        <div>
+            <InputText id="AssetIdCode" DisplayName="AssetId" @bind-Value="Asset.AssetIdCode" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div>
+            <label>AssetNameArabic</label>
+        </div>
+        <div>
+            <InputText id="AssetNameArabic" DisplayName="AssetId" @bind-Value="Asset.AssetNameArabic" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div>
+            <label>AssetDateOfService</label>
+        </div>
+        <div>
+            <InputDate id="AssetNameArabic" DisplayName="AssetDateOfService" @bind-Value="Asset.AssetDateOfService" />
+        </div>
+    </div>
+
+
+
+
+    <button type="submit">Submit</button>
+</EditForm>
+
+<div class="row">
+    <div>
+        <label>Upload the Picture after the Submit</label>
+    </div>
+    @if (Asset.Id == null)
+    {
+        <div>
+            <button disabled> please submit the asset first </button>
+        </div>
+    }
+    else
+    {
         <div>
             <InputFile OnChange="@UploadPicure" />
         </div>
-    </div>
+    }
+    @if (!String.IsNullOrEmpty(uploadedPictureBase64))
+    {
+        <img src="@uploadedPictureBase64" width="400" height="400" />
+    }
 
-    <div class="row">
+</div>
+
+<div class="row">
+    <div>
+        <label>Upload the files after the Submit</label>
+    </div>
+    @if (Asset.Id == null)
+    {
         <div>
-            <label>Upload the files after the Submit</label>
+            <button disabled> please submit the asset first </button>
         </div>
+    }
+    else
+    {
         <div>
             <InputFile OnChange="@LoadFiles" multiple />
         </div>
-    </div>
+    }
 
-    @code{
-        public AssetDataViewModel Asset { get; set; }
+    @foreach (string documentId in documentsIds)
+    {
+        <button @onclick="@(async () => await DownloadDocument(documentId))"> Download documnet  @documentId </button>
 
-        protected override async Task OnInitializedAsync()
+    }
+
+</div>
+
+@code{
+    public AssetDataViewModel Asset { get; set; }
+
+    public IBrowserFile browserFile { get; set; }
+
+    string uploadedPictureBase64 { get; set; }
+
+    List<string> documentsIds { get; set; } = new List<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Asset = new AssetDataViewModel();
+        Asset.Picure = new StoredFileDataViewModel();
+        Asset.Decuments = new List<StoredFileDataViewModel>();
+
+    }
+
+    private async Task HandleValidSubmit()
+    {
+
+
+
+
+
+        HttpResponseMessage responseMessage = await Http.PostAsJsonAsync<AssetDataViewModel>("api/asset/AddNewAsset", Asset);
+
+        var responseContent = await responseMessage.Content.ReadAsStringAsync();
+        Asset = JsonConvert.DeserializeObject<AssetDataViewModel>(responseContent);
+
+        var i = Asset.Id;
+
+
+    }
+
+    private async Task UploadPicure(InputFileChangeEventArgs e)
+    {
+
+        if (Asset.Id != null)
         {
-            Asset = new AssetDataViewModel();
+            foreach (var file in e.GetMultipleFiles(1))
+            {
+
+
+                var fileContent = new StreamContent(file.OpenReadStream(maxAllowedSize: 99999999999999));
+                fileContent.Headers.ContentType =
+                       new MediaTypeHeaderValue(file.ContentType);
+
+                MultipartFormDataContent form = new MultipartFormDataContent();
+                form.Add(content: fileContent, "file", file.Name);
+                form.Add(new StringContent(Asset.Id), "assetId");
+
+                HttpResponseMessage responseMessage = await Http.PostAsync($"api/asset/UpdatePictureForAsset", form);
+
+                uploadedPictureBase64 = await responseMessage.Content.ReadAsStringAsync();
+
+
+            }
         }
 
-        private async Task HandleValidSubmit()
+
+
+    }
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        if (Asset.Id != null)
         {
+            foreach (var file in e.GetMultipleFiles(1))
+            {
 
 
-            string json = JsonConvert.SerializeObject(Asset);
+                var fileContent = new StreamContent(file.OpenReadStream(maxAllowedSize: 99999999999999));
+                fileContent.Headers.ContentType =
+                       new MediaTypeHeaderValue(file.ContentType);
+
+                MultipartFormDataContent form = new MultipartFormDataContent();
+                form.Add(content: fileContent, "file", file.Name);
+                form.Add(new StringContent(Asset.Id), "assetId");
+
+                HttpResponseMessage responseMessage = await Http.PostAsync($"api/asset/AddDoocumentForAsset", form);
+
+                string newDocumentId = await responseMessage.Content.ReadAsStringAsync();
+
+                documentsIds.Add(newDocumentId);
 
 
-
-
-            var result = await Http.PostAsJsonAsync("Asset/AddNewAsset", json);
-
-            var s = result.Content;
-
-
-        }
-
-        private void UploadPicure(InputFileChangeEventArgs e)
-        {
-
-        }
-
-        private void LoadFiles(InputFileChangeEventArgs e)
-        {
-
+            }
         }
     }
+
+    private async Task DownloadDocument(string id)
+    {
+        NavigationManager.NavigateTo($"api/asset/DownloadDocumentFileById?id={id}", true);
+
+    }
+
+
+
+}

@@ -3,6 +3,7 @@ using System;
 using DE.Server.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DE.Server.Migrations
 {
     [DbContext(typeof(DEDbContext))]
-    partial class DEDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220306055857_allowAssetNulls")]
+    partial class allowAssetNulls
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
